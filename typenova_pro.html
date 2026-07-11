@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TypeNova Ultimate Edition</title>
+<meta name="description" content="A fast, keyboard-first typing speed test with leaderboards, badges, and live stats.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Mono:wght@400;700&family=Roboto+Mono:wght@400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================= RESET & TOKENS ============================= */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{color-scheme:dark;}
+:root{
+  --bg:#14161b; --panel:#1c1f26; --panel-2:#22262f; --text:#e4e6eb; --sub:#4b4f58;
+  --error:#ff5c7a; --accent:#8b7fff; --accent2:#5eead4;
+  --font-ui:'Manrope',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  --radius:10px; --shadow:0 20px 60px -20px rgba(0,0,0,.6);
+}
+.fs-sm{--test-fs:22px;} .fs-md{--test-fs:28px;} .fs-lg{--test-fs:34px;} .fs-xl{--test-fs:42px;}
+@media (prefers-reduced-motion:reduce){ *,*::before,*::after{animation-duration:0.001ms !important;animation-iteration-count:1 !important;transition-duration:0.001ms !important;} }
+
+body{
+  min-height:100vh; background:var(--bg); color:var(--text); font-family:var(--font-ui);
+  overflow-x:hidden; transition:background .25s ease,color .25s ease;
+}
+button,input,textarea{font:inherit;color:inherit;background:none;border:none;outline:none;}
+button{cursor:pointer;} ul{list-style:none;} svg{display:block;}
+::selection{background:var(--accent);color:var(--bg);}
+
+/* ============================= LAYOUT & TOP BAR ============================= */
+#app{ min-height:100vh; display:flex; flex-direction:column; max-width:1100px; margin:0 auto; padding:24px 28px 40px; }
+#topBar{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding-bottom:22px; }
+#logo{ font-family:var(--font-mono); font-weight:700; font-size:20px; letter-spacing:-0.02em; display:flex; align-items:center; gap:2px; user-select:none; }
+#logo span{color:var(--accent);} #logoCaret{color:var(--accent); animation:blink 1s steps(1) infinite;}
+
+#topRight{display:flex;align-items:center;gap:10px;}
+.iconBtn{ width:38px;height:38px; display:flex;align-items:center;justify-content:center; border-radius:8px; color:var(--sub); transition:all .15s ease; }
+.iconBtn:hover{background:var(--panel);color:var(--text);} .iconBtn:active{transform:scale(0.92);}
+.iconBtn svg{width:18px;height:18px;}
+
+/* Auth Button */
+.userBtn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; background: var(--panel); color: var(--text); font-size: 13px; font-weight: 700; border: 1px solid var(--panel-2); transition: all 0.2s ease; cursor:pointer;}
+.userBtn:hover { background: var(--panel-2); border-color: var(--accent); color: var(--accent); }
+.userBtn svg { width: 14px; height: 14px; }
+.userAvatar { width:20px; height:20px; border-radius:50%; background:var(--accent); color:var(--bg); display:none; align-items:center; justify-content:center; font-size:10px; font-weight:800; }
+
+/* ---- mode config row ---- */
+#modeConfig{ display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; padding:10px 16px; background:var(--panel); border-radius:12px; margin:0 auto 8px; transition:all .2s ease; }
+#modeConfig.hidden{display:none;}
+.configGroup{display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.configDivider{width:1px;height:20px;background:var(--sub);opacity:.35;margin:0 6px;}
+.chip{ padding:6px 13px; border-radius:20px; font-size:13px; font-weight:600; color:var(--sub); display:flex;align-items:center;gap:6px; transition:all .15s ease; white-space:nowrap; }
+.chip:hover{color:var(--text);} .chip.active{color:var(--bg);background:var(--accent);}
+.chip svg{width:13px;height:13px;}
+.toggleBtn.active{color:var(--accent2);background:transparent;}
+.toggleBtn.active::after{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent2);margin-left:2px;}
+
+#customPanel{ width:100%; display:flex; flex-direction:column; gap:10px; padding-top:8px; }
+#customPanel.hidden{display:none;}
+#customText{ width:100%;min-height:90px;resize:vertical; background:var(--panel-2); border-radius:8px;padding:12px; font-family:var(--font-mono);font-size:14px; color:var(--text); }
+#customStartBtn{ align-self:flex-end; padding:8px 16px;border-radius:8px; background:var(--accent);color:var(--bg); font-weight:700;font-size:13px; }
+
+/* ============================= TEST AREA ============================= */
+#testWrap{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px; padding:20px 0 40px; min-height:52vh; }
+#liveStats{ display:flex;gap:26px; font-family:var(--font-mono); color:var(--accent); font-size:15px;font-weight:600; height:20px; }
+#liveStats span{display:flex;align-items:baseline;gap:5px;}
+#liveStats .lbl{color:var(--sub);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+#liveStats .hidden{display:none;}
+
+#typingArea{ position:relative; width:100%; max-width:850px; outline:none; cursor:text; }
+#wordsViewport{ overflow:hidden; height:calc(var(--test-fs) * 1.65 * 3); transition:opacity .15s ease; }
+#typingArea.blurred #wordsViewport{filter:blur(5px);opacity:.5;}
+#focusHint{ position:absolute;inset:0; display:none; align-items:center;justify-content:center; font-size:14px;color:var(--sub); pointer-events:none; }
+#typingArea.blurred #focusHint{display:flex;}
+
+#wordsTrack{ display:flex;flex-wrap:wrap; align-content:flex-start; font-family:var(--font-mono); font-size:var(--test-fs); line-height:1.65; will-change:transform; transition:transform .2s ease; }
+.word{ position:relative; margin:0 0.28em 0 0; white-space:nowrap; }
+.letter{color:var(--sub);transition:color .06s ease;}
+.letter.correct{color:var(--text);} .letter.incorrect{color:var(--error);} .letter.extra{color:var(--error);opacity:.65;}
+.letter.missed{color:var(--error);text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;}
+.word.shake{animation:shake .18s ease;} .letter.flash{animation:flash .18s ease;}
+
+#caret{ position:absolute;top:0;left:0; background:var(--accent); border-radius:1px; pointer-events:none; transition:transform .1s cubic-bezier(.3,.9,.4,1),opacity .1s ease; }
+#caret.instant{transition:opacity .1s ease;} #caret.blink{animation:blink 1s steps(1) infinite;}
+#caret.style-line{width:2px;} #caret.style-block{opacity:.28;} #caret.style-underline{opacity:1;} #caret.style-off{display:none;}
+#hiddenInput{ position:absolute; opacity:0;pointer-events:none; width:1px;height:1px; }
+
+#restartRow{ display:flex;align-items:center;gap:14px; }
+#restartBtn{ width:44px;height:44px;border-radius:50%; background:var(--panel);color:var(--sub); display:flex;align-items:center;justify-content:center; transition:all .2s ease; }
+#restartBtn:hover{background:var(--panel-2);color:var(--accent);}
+#restartBtn.spin{transform:rotate(-360deg);}
+#restartBtn svg{width:18px;height:18px;}
+.hintText{font-size:12px;color:var(--sub);font-family:var(--font-mono);display:flex;align-items:center;gap:6px;}
+kbd{ background:var(--panel); padding:2px 7px;border-radius:5px; font-family:var(--font-mono);font-size:11px; color:var(--text); border-bottom:2px solid var(--panel-2); }
+#finishZenBtn{display:none;} #finishZenBtn.show{display:flex;}
+
+/* ============================= RESULTS ============================= */
+#resultsScreen{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:26px; padding:20px 0 40px; animation:fadeUp .4s ease; }
+#resultsScreen.hidden{display:none;}
+#resultHead{ display:flex;align-items:baseline;gap:34px;flex-wrap:wrap;justify-content:center; }
+#resultWpmBlock{text-align:left;}
+#resultWpmBig{ font-family:var(--font-mono); font-weight:700; font-size:96px; line-height:1; color:var(--accent); letter-spacing:-0.03em; }
+#resultWpmLabel{ font-size:13px;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-top:6px; }
+#resultAccBlock #resultAccBig{ font-family:var(--font-mono);font-weight:700;font-size:52px;color:var(--accent2);line-height:1; }
+#resultAccBlock{text-align:left;}
+
+#pbBadge{ display:none; align-items:center;gap:6px; padding:6px 14px;border-radius:20px; background:rgba(94,234,212,.12); color:var(--accent2); font-weight:700;font-size:12.5px; animation:pulse 1.6s ease infinite; }
+#pbBadge.show{display:inline-flex;}
+#failBadge{ display:none; padding:6px 14px;border-radius:20px; background:rgba(255,92,122,.12); color:var(--error);font-weight:700;font-size:12.5px; }
+#failBadge.show{display:inline-block;}
+
+#newBadgesPanel { display:none; flex-direction:column; align-items:center; gap:12px; padding:16px; background:var(--panel); border-radius:12px; border:1px solid var(--accent); animation:pulse 2s infinite; }
+.badgeItem { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:20px; background:var(--panel-2); font-size:12px; font-weight:700; color:var(--accent2); }
+
+#resultStatsGrid{ display:grid; grid-template-columns:repeat(4,minmax(110px,1fr)); gap:22px 34px; font-family:var(--font-mono); }
+.statCell .statVal{font-size:20px;font-weight:600;color:var(--text);} .statCell .statLbl{font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.06em;margin-top:3px;}
+
+#chartWrap{ width:100%;max-width:760px; background:var(--panel); border-radius:14px; padding:18px 18px 8px; }
+#chartLegend{display:flex;gap:18px;font-size:11.5px;color:var(--sub);padding-bottom:6px;font-family:var(--font-mono);}
+#chartLegend span{display:flex;align-items:center;gap:6px;}
+.legendDot{width:8px;height:8px;border-radius:50%;}
+#wpmChart{width:100%;height:170px;}
+.chartLine{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;}
+.chartLineWpm{stroke:var(--accent);} .chartLineRaw{stroke:var(--accent2);stroke-dasharray:4 4;opacity:.7;}
+.chartErrTick{fill:var(--error);} .chartAxisText{fill:var(--sub);font-family:var(--font-mono);font-size:9px;} .chartGrid{stroke:var(--sub);stroke-opacity:.12;}
+
+#recentWrap{width:100%;max-width:760px;}
+#recentWrap h4{font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;font-weight:700;}
+#recentList{display:flex;flex-direction:column;gap:4px;}
+.recentRow{ display:flex;justify-content:space-between;align-items:center; padding:8px 12px;border-radius:8px;background:var(--panel); font-family:var(--font-mono);font-size:12.5px;color:var(--sub); }
+.recentRow b{color:var(--text);} .recentRow .rMode{color:var(--sub);}
+
+#resultActions{display:flex;gap:12px;}
+.btnPrimary,.btnGhost{ padding:11px 22px;border-radius:10px;font-weight:700;font-size:13.5px; display:flex;align-items:center;gap:8px; transition:transform .15s ease,background .15s ease; }
+.btnPrimary{background:var(--accent);color:var(--bg);} .btnPrimary:hover{transform:translateY(-1px);}
+.btnGhost{background:var(--panel);color:var(--text);} .btnGhost:hover{background:var(--panel-2);}
+
+/* ============================= OVERLAYS ============================= */
+.overlay{ position:fixed;inset:0; background:rgba(6,7,9,.6); backdrop-filter:blur(6px); display:flex;align-items:center;justify-content:center; z-index:50; padding:24px; animation:fadeIn .15s ease; }
+.overlay.hidden{display:none;}
+.modalPanel{ width:100%;max-width:640px;max-height:80vh;overflow-y:auto; background:var(--panel);border-radius:16px; padding:26px 26px 30px; box-shadow:var(--shadow); }
+.modalPanel::-webkit-scrollbar{width:8px;} .modalPanel::-webkit-scrollbar-thumb{background:var(--panel-2);border-radius:8px;}
+.modalHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.modalHead h2{font-size:17px;font-weight:800; display:flex; align-items:center; gap:8px;}
+
+/* Auth & Leaderboard Custom UI */
+.authInput { width:100%; background:var(--panel-2); color:var(--text); padding:12px 16px; border-radius:10px; font-size:14px; font-family:var(--font-mono); margin-bottom:12px; border:1px solid transparent; transition:border 0.2s;}
+.authInput:focus { border-color:var(--accent); }
+.authBtn { width:100%; padding:12px; border-radius:10px; background:var(--accent); color:var(--bg); font-weight:700; font-size:14px; margin-top:8px; transition:transform 0.1s;}
+.authBtn:active { transform:scale(0.98); }
+.lbRow { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-radius:10px; background:var(--panel-2); margin-bottom:8px; transition:transform 0.1s; }
+.lbRow:hover { transform:translateX(4px); border-left:3px solid var(--accent); }
+.lbRank { font-family:var(--font-mono); font-weight:800; font-size:16px; color:var(--sub); width:30px; }
+.lbUser { flex:1; font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px;}
+.lbWpm { font-family:var(--font-mono); font-weight:800; font-size:20px; color:var(--accent); }
+.lbBadges { display:flex; gap:4px; margin-right: 12px; }
+.badgeIcon { font-size:14px; cursor:help; }
+
+/* Settings Panels */
+.settingsSection{margin-bottom:22px;}
+.settingsSection h3{ font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.08em; margin-bottom:12px;font-weight:700; }
+.settingRow{ display:flex;justify-content:space-between;align-items:center; padding:9px 0;gap:14px;flex-wrap:wrap; }
+.settingRow > span:first-child{font-size:13.5px;color:var(--text);font-weight:600;}
+.segGroup{display:flex;gap:4px;background:var(--panel-2);padding:3px;border-radius:9px;}
+.segGroup button{ padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;color:var(--sub); transition:all .15s ease; }
+.segGroup button.active{background:var(--accent);color:var(--bg);}
+.switch{ width:38px;height:22px;border-radius:20px;background:var(--panel-2); position:relative;transition:background .15s ease;flex-shrink:0; }
+.switch::after{ content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%; background:var(--sub);transition:transform .15s ease,background .15s ease; }
+.switch.on{background:rgba(139,127,255,.25);} .switch.on::after{transform:translateX(16px);background:var(--accent);}
+
+.themeGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;}
+.themeSwatch{ display:flex;align-items:center;gap:8px; padding:8px 10px;border-radius:9px;background:var(--panel-2); border:1.5px solid transparent; font-size:12px;font-weight:700; transition:border-color .15s ease; }
+.themeSwatch.active{border-color:var(--accent);}
+.swatchDots{display:flex;gap:3px;} .swatchDot{width:9px;height:9px;border-radius:50%;}
+select.selectMini{ background:var(--panel-2);padding:7px 10px;border-radius:7px;font-size:12.5px;font-weight:600; max-width:170px; }
+input[type=range]{width:110px;accent-color:var(--accent);}
+.settingsFooterRow{display:flex;gap:10px;margin-top:6px;}
+.smallGhostBtn{ padding:8px 14px;border-radius:8px;background:var(--panel-2);color:var(--sub);font-size:12px;font-weight:700; }
+.smallGhostBtn:hover{color:var(--error);}
+
+/* ---- command palette ---- */
+#paletteInputRow{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--panel-2);}
+#paletteInputRow svg{width:16px;height:16px;color:var(--sub);flex-shrink:0;}
+#paletteInput{flex:1;font-size:14px;color:var(--text);} #paletteInput::placeholder{color:var(--sub);}
+#paletteList{max-height:340px;overflow-y:auto;padding:8px;}
+.paletteItem{ display:flex;justify-content:space-between;align-items:center; padding:10px 12px;border-radius:8px;font-size:13.5px;color:var(--text); cursor:pointer;}
+.paletteItem .pCat{color:var(--sub);font-size:11px;} .paletteItem.sel{background:var(--panel-2);}
+.paletteEmpty{padding:20px;text-align:center;color:var(--sub);font-size:13px;}
+
+/* ---- toast ---- */
+#toast{ position:fixed;bottom:26px;left:50%; transform:translate(-50%,20px); background:var(--panel);color:var(--text); padding:11px 20px;border-radius:24px; font-size:13px;font-weight:600; box-shadow:var(--shadow); opacity:0;pointer-events:none; transition:opacity .2s ease,transform .2s ease; z-index:80; display:flex;align-items:center;gap:8px; }
+#toast.show{opacity:1;transform:translate(-50%,0);} #toast .dot{width:6px;height:6px;border-radius:50%;background:var(--accent2);}
+
+/* ============================= ANIMATIONS ============================= */
+@keyframes blink{0%,50%{opacity:1;}50.01%,100%{opacity:0;}}
+@keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+@keyframes flash{0%{filter:brightness(1.8);}100%{filter:brightness(1);}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(94,234,212,.35);}50%{box-shadow:0 0 0 6px rgba(94,234,212,0);}}
+
+@media (max-width:720px){
+  #app{padding:16px 16px 28px;} #resultWpmBig{font-size:64px;} #resultAccBlock #resultAccBig{font-size:36px;}
+  #resultStatsGrid{grid-template-columns:repeat(2,1fr);gap:16px 24px;}
+  .fs-md{--test-fs:22px;} .fs-lg{--test-fs:26px;} .fs-xl{--test-fs:32px;}
+  #resultHead{gap:20px;} #modeConfig{gap:6px;padding:8px 10px;} .configDivider{margin:0 3px;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===================== TOP BAR ===================== -->
+  <header id="topBar">
+    <div id="logo">TypeNova<span id="logoCaret">_</span></div>
+
+    <div id="modeConfig">
+      <div class="configGroup" id="modeGroup">
+        <button class="chip active" data-mode="time">time</button>
+        <button class="chip" data-mode="words">words</button>
+        <button class="chip" data-mode="quote">quote</button>
+        <button class="chip" data-mode="zen">zen</button>
+        <button class="chip" data-mode="custom">custom</button>
+      </div>
+      <div class="configDivider" id="divider1"></div>
+      
+      <div class="configGroup" id="langGroup">
+        <button class="chip active" data-lang="english">EN</button>
+        <button class="chip" data-lang="c_code">C++</button>
+        <button class="chip" data-lang="python">PY</button>
+      </div>
+      <div class="configDivider" id="divider3"></div>
+
+      <div class="configGroup" id="toggleGroup">
+        <button class="chip toggleBtn" data-toggle="punctuation">punctuation</button>
+        <button class="chip toggleBtn" data-toggle="numbers">numbers</button>
+      </div>
+      <div class="configDivider" id="divider2"></div>
+      <div class="configGroup" id="amountGroup">
+        <!-- Injected via JS -->
+      </div>
+
+      <div id="customPanel" class="hidden">
+        <textarea id="customText" placeholder="Paste or type the text you want to practice on…"></textarea>
+        <button id="customStartBtn">Start test →</button>
+      </div>
+    </div>
+
+    <div id="topRight">
+      <button class="iconBtn" id="leaderboardBtn" title="Global Leaderboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-4"/></svg>
+      </button>
+      <button class="iconBtn" id="paletteBtn" title="Command menu (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h6"/></svg>
+      </button>
+      <button class="iconBtn" id="settingsBtn" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
+      <button class="userBtn" id="authTriggerBtn">
+        <div class="userAvatar" id="userAvatar">?</div>
+        <svg id="authIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span id="authLabel">Sign In</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===================== TEST AREA ===================== -->
+  <main id="testWrap">
+    <div id="liveStats">
+      <span id="liveWpmWrap"><b id="liveWpm">0</b><span class="lbl">wpm</span></span>
+      <span id="liveAccWrap"><b id="liveAcc">100%</b><span class="lbl">acc</span></span>
+      <span id="liveTimeWrap"><b id="liveTime">30</b><span class="lbl" id="liveTimeLbl">sec</span></span>
+    </div>
+    <div id="typingArea" tabindex="0">
+      <div id="wordsViewport"><div id="wordsTrack"></div></div>
+      <div id="caret" class="style-line"></div>
+      <div id="focusHint">click here or press any key to focus</div>
+      <input id="hiddenInput" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="1">
+    </div>
+    <div id="restartRow">
+      <button id="restartBtn" title="Restart (Tab)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>
+      <span class="hintText"><kbd>tab</kbd> restart · <kbd>esc</kbd> menu</span>
+      <button id="finishZenBtn" class="btnGhost">Finish test</button>
+    </div>
+  </main>
+
+  <!-- ===================== RESULTS ===================== -->
+  <section id="resultsScreen" class="hidden">
+    <div id="resultHead">
+      <div id="resultWpmBlock"><div id="resultWpmBig">0</div><div id="resultWpmLabel">words / min</div></div>
+      <div id="resultAccBlock"><div id="resultAccBig">0%</div><div id="resultWpmLabel">accuracy</div></div>
+      <span id="pbBadge">★ new personal best</span>
+      <span id="failBadge">test failed</span>
+    </div>
+
+    <!-- Achievement Unlock Notification -->
+    <div id="newBadgesPanel">
+        <span style="font-size: 11px; color: var(--sub); text-transform: uppercase; font-weight: 800;">Achievement Unlocked!</span>
+        <div id="newBadgesContainer" style="display:flex; gap:8px;"></div>
+    </div>
+
+    <div id="resultStatsGrid">
+      <div class="statCell"><div class="statVal" id="statRaw">0</div><div class="statLbl">raw wpm</div></div>
+      <div class="statCell"><div class="statVal" id="statConsistency">0%</div><div class="statLbl">consistency</div></div>
+      <div class="statCell"><div class="statVal" id="statChars">0/0/0/0</div><div class="statLbl">chars (ok/err/ex/mis)</div></div>
+      <div class="statCell"><div class="statVal" id="statTime">0s</div><div class="statLbl">time</div></div>
+      <div class="statCell"><div class="statVal" id="statMode">time 30</div><div class="statLbl">test mode</div></div>
+      <div class="statCell"><div class="statVal" id="statDiff">normal</div><div class="statLbl">difficulty</div></div>
+    </div>
+
+    <div id="chartWrap">
+      <div id="chartLegend">
+        <span><i class="legendDot" style="background:var(--accent)"></i>wpm</span>
+        <span><i class="legendDot" style="background:var(--accent2)"></i>raw</span>
+        <span><i class="legendDot" style="background:var(--error)"></i>error</span>
+      </div>
+      <svg id="wpmChart" viewBox="0 0 700 170" preserveAspectRatio="none"></svg>
+    </div>
+
+    <div id="recentWrap">
+      <h4>recent tests</h4>
+      <div id="recentList"></div>
+    </div>
+
+    <div id="resultActions">
+      <button class="btnPrimary" id="nextTestBtn">Next test <kbd style="background:rgba(0,0,0,.2);border-color:transparent;color:inherit">tab</kbd></button>
+      <button class="btnGhost" id="repeatTestBtn">Repeat</button>
+    </div>
+  </section>
+</div>
+
+<!-- ===================== AUTH & PROFILE OVERLAY ===================== -->
+<div class="overlay hidden" id="authOverlay">
+  <div class="modalPanel">
+    <div class="modalHead">
+      <h2 id="authModalTitle">Sign In</h2>
+      <button class="iconBtn" onclick="closeModal('authOverlay')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div id="loginView">
+        <p style="font-size:13px; color:var(--sub); margin-bottom:20px;">Log in to save your personal bests, earn achievement badges, and climb the global leaderboard.</p>
+        <input type="text" id="usernameInput" class="authInput" placeholder="Enter Username (e.g. Guest_Typist)" autocomplete="off">
+        <button class="authBtn" onclick="handleLogin()">Authenticate Terminal</button>
+    </div>
+    <div id="profileView" class="hidden">
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
+            <div class="userAvatar" id="profileAvatar" style="width:60px; height:60px; font-size:24px; display:flex;">?</div>
+            <div>
+                <h3 id="profileName" style="font-size:20px; font-weight:800; color:var(--text);">Username</h3>
+                <p id="profileHighscore" style="font-size:14px; font-family:var(--font-mono); color:var(--accent);">Highscore: 0 WPM</p>
+            </div>
+        </div>
+        <div style="margin-bottom:20px;">
+            <span style="font-size:11px; color:var(--sub); text-transform:uppercase; font-weight:800;">Earned Badges</span>
+            <div id="profileBadges" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;"></div>
+        </div>
+        <button class="authBtn" style="background:var(--panel-2); color:var(--error);" onclick="handleLogout()">Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== LEADERBOARD OVERLAY ===================== -->
+<div class="overlay hidden" id="leaderboardOverlay">
+  <div class="modalPanel" style="max-width: 650px;">
+    <div class="modalHead">
+      <h2><svg viewBox="0 0 24 24" width="20" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-4"/></svg> Global Leaderboard</h2>
+      <button class="iconBtn" onclick="closeModal('leaderboardOverlay')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div id="leaderboardList">
+        <!-- Rendered via JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SETTINGS OVERLAY ===================== -->
+<div class="overlay hidden" id="settingsOverlay">
+  <div class="modalPanel">
+    <div class="modalHead">
+      <h2>Settings</h2>
+      <button class="iconBtn" id="closeSettingsBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="settingsSection">
+      <h3>Behavior</h3>
+      <div class="settingRow">
+        <span>Difficulty</span>
+        <div class="segGroup" data-setting="difficulty">
+          <button data-val="normal">normal</button><button data-val="expert">expert</button><button data-val="master">master</button>
+        </div>
+      </div>
+      <div class="settingRow">
+        <span>Stop on error</span>
+        <div class="segGroup" data-setting="stopOnError">
+          <button data-val="off">off</button><button data-val="word">word</button><button data-val="letter">letter</button>
+        </div>
+      </div>
+      <div class="settingRow"><span>Blind mode</span><button class="switch" data-setting="blindMode"></button></div>
+    </div>
+    <div class="settingsSection">
+      <h3>Sound (TypeNova Mechanical Synth)</h3>
+      <div class="settingRow"><span>Click sound</span><button class="switch" data-setting="soundOnClick"></button></div>
+      <div class="settingRow"><span>Volume</span><input type="range" min="0" max="1" step="0.05" id="volumeSlider"></div>
+    </div>
+    <div class="settingsSection">
+      <h3>Caret</h3>
+      <div class="settingRow">
+        <span>Style</span>
+        <div class="segGroup" data-setting="caretStyle">
+          <button data-val="line">line</button><button data-val="block">block</button><button data-val="underline">underline</button><button data-val="off">off</button>
+        </div>
+      </div>
+      <div class="settingRow"><span>Smooth caret</span><button class="switch" data-setting="smoothCaret"></button></div>
+      <div class="settingRow"><span>Blink</span><button class="switch" data-setting="caretBlink"></button></div>
+    </div>
+    <div class="settingsSection">
+      <h3>Appearance</h3>
+      <div class="settingRow"><span>Theme</span></div>
+      <div class="themeGrid" id="themeGrid"></div>
+      <div class="settingRow" style="margin-top:14px;"><span>Font</span><select class="selectMini" id="fontSelect"></select></div>
+      <div class="settingRow">
+        <span>Font size</span>
+        <div class="segGroup" data-setting="fontSize">
+          <button data-val="sm">S</button><button data-val="md">M</button><button data-val="lg">L</button><button data-val="xl">XL</button>
+        </div>
+      </div>
+    </div>
+    <div class="settingsSection">
+      <h3>Live stats</h3>
+      <div class="settingRow"><span>Live WPM</span><button class="switch" data-setting="liveWpm"></button></div>
+      <div class="settingRow"><span>Live accuracy</span><button class="switch" data-setting="liveAcc"></button></div>
+      <div class="settingRow"><span>Live timer / progress</span><button class="switch" data-setting="liveTimer"></button></div>
+    </div>
+    <div class="settingsSection">
+      <h3>Data</h3>
+      <div class="settingsFooterRow">
+        <button class="smallGhostBtn" id="resetSettingsBtn">Reset settings</button>
+        <button class="smallGhostBtn" id="clearHistoryBtn">Clear history &amp; PBs</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== COMMAND PALETTE OVERLAY ===================== -->
+<div class="overlay hidden" id="paletteOverlay">
+  <div class="modalPanel" id="commandPalette" style="padding:0;">
+    <div id="paletteInputRow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input id="paletteInput" placeholder="Type a command…" autocomplete="off">
+    </div>
+    <ul id="paletteList"></ul>
+  </div>
+</div>
+
+<div id="toast"><i class="dot"></i><span id="toastText"></span></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   DOM UTILITIES
+   ============================================================ */
+var $ = function(id){ return document.getElementById(id); };
+
+/* ============================================================
+   CLIENT-SIDE DATABASE & AUTH LOGIC (localStorage)
+   ============================================================ */
+const DEFAULT_USERS = {
+    "KULKARNI PRANAV PRAHALAD": { wpm: 145, tests: 112, badges: ["🏆 C-Syntax Master", "⚡ RTX Overclocked", "⌨️ Fast Fingers"] },
+    "Vikram Choudhar": { wpm: 121, tests: 45, badges: ["🔥 Speed Demon", "⌨️ Fast Fingers"] },
+    "Guest_Typist": { wpm: 85, tests: 12, badges: ["⌨️ Fast Fingers"] }
+};
+
+let UsersDB = JSON.parse(localStorage.getItem("typenova_users")) || DEFAULT_USERS;
+let currentUser = localStorage.getItem("typenova_current_user") || null;
+
+function saveDB() {
+    localStorage.setItem("typenova_users", JSON.stringify(UsersDB));
+    localStorage.setItem("typenova_current_user", currentUser || "");
+}
+
+function updateAuthUI() {
+    const lbl = $("authLabel"), icon = $("authIcon"), avatar = $("userAvatar");
+    if (currentUser) {
+        lbl.textContent = currentUser.split(" ")[0]; 
+        icon.style.display = "none";
+        avatar.style.display = "flex";
+        avatar.textContent = currentUser.charAt(0).toUpperCase();
+    } else {
+        lbl.textContent = "Sign In";
+        icon.style.display = "block";
+        avatar.style.display = "none";
+    }
+}
+
+window.handleLogin = function() {
+    const input = $("usernameInput").value.trim();
+    if (!input) return;
+    if (!UsersDB[input]) UsersDB[input] = { wpm: 0, tests: 0, badges: [] }; 
+    currentUser = input; saveDB(); updateAuthUI(); closeModal('authOverlay');
+    $("usernameInput").value = "";
+    showToast(`Welcome back, ${currentUser.split(" ")[0]}`);
+};
+
+window.handleLogout = function() {
+    currentUser = null; saveDB(); updateAuthUI(); closeModal('authOverlay');
+    showToast("Signed out successfully");
+};
+
+window.openAuthModal = function() {
+    $("authOverlay").classList.remove("hidden");
+    if (currentUser) {
+        $("loginView").classList.add("hidden");
+        $("profileView").classList.remove("hidden");
+        $("authModalTitle").textContent = "Player Profile";
+        $("profileName").textContent = currentUser;
+        $("profileAvatar").textContent = currentUser.charAt(0).toUpperCase();
+        $("profileHighscore").textContent = `Global Highscore: ${UsersDB[currentUser].wpm} WPM`;
+        
+        const badgeBox = $("profileBadges");
+        badgeBox.innerHTML = "";
+        const userBadges = UsersDB[currentUser].badges;
+        if (userBadges.length === 0) badgeBox.innerHTML = "<span style='color:var(--sub); font-size:12px;'>No badges earned yet. Keep typing!</span>";
+        userBadges.forEach(b => badgeBox.innerHTML += `<div class="badgeItem">${b}</div>`);
+    } else {
+        $("loginView").classList.remove("hidden");
+        $("profileView").classList.add("hidden");
+        $("authModalTitle").textContent = "Sign In";
+        setTimeout(() => $("usernameInput").focus(), 50);
+    }
+};
+
+window.closeModal = function(id) { 
+    var el = typeof id === "string" ? $(id) : id;
+    if(el) el.classList.add("hidden"); 
+    focusInput(); 
+};
+
+window.openLeaderboard = function() {
+    $("leaderboardOverlay").classList.remove("hidden");
+    const list = $("leaderboardList"); list.innerHTML = "";
+    
+    const sortedUsers = Object.keys(UsersDB).sort((a, b) => UsersDB[b].wpm - UsersDB[a].wpm);
+    sortedUsers.forEach((user, index) => {
+        const data = UsersDB[user];
+        const isMe = user === currentUser;
+        let badgesHTML = data.badges.map(b => `<span class="badgeIcon" title="${b}">${b.split(' ')[0]}</span>`).join('');
+        list.innerHTML += `
+            <div class="lbRow" style="${isMe ? 'border-left: 3px solid var(--accent); background: var(--panel);' : ''}">
+                <div class="lbRank">#${index + 1}</div>
+                <div class="lbUser">${user} ${isMe ? '<span style="font-size:10px; color:var(--accent); background:rgba(139,127,255,0.2); padding:2px 6px; border-radius:4px;">YOU</span>' : ''}</div>
+                <div class="lbBadges">${badgesHTML}</div>
+                <div class="lbWpm">${data.wpm} <span style="font-size:10px; color:var(--sub);">WPM</span></div>
+            </div>
+        `;
+    });
+};
+
+/* ============================================================
+   DATA (TypeNova Integrated Dictionaries)
+   ============================================================ */
+var DICTIONARIES = {
+  english: ["the","of","and","a","to","in","is","you","that","it","he","was","for","on","are","as","with","his","they","at","be","this","have","from","or","one","had","by","word","but","not","what","all","were","when","your","can","said","there","use","each","which","she","how","their","will","other","about","out","many","then","them","these","would","make","like","him","into","time","has","look","two","more","write","see","number","way","could","people","than","first","water","been","who","its","now","find","long","down","day","did","get","come","made","may","part","over","new","sound","only","little","work","know","place","year","live","back","give","most","very","after","thing","name","good","sentence","man","think","say","great","where","help","through","much","before","line","right","too","mean","old","any","same","tell","boy","follow","came","want","show","also","around","form","three","small","set","put","end","does","another","well","large","must","big","even","such","because","turn","here","why","ask","went","men","read","need","land","different","home","move","try","kind","hand","picture","again","change","off","play","spell","air","away","animal","house","point","page","letter","mother","answer","found","study","still","learn","should","world","school","grow","food","under","last","never","us","left","late","run","dont","while","press","close","night","real","few","north","open","seem","together","next","white","children","begin","got","walk","example","ease","paper","group","always","music","those","both","mark","often","letters","until","mile","river","car","feet","care","second","enough","plain","girl","usual","young","ready","above","ever","red","list","though","feel","talk","bird","soon","body","dog","family","direct","leave","song","measure","state","product","black","short","numeral","class","wind","question","happen","complete","ship","area","half","rock","order","fire","south","problem","piece","told","knew","pass","since","top","whole","king","space","heard","best","hour","better","true","during","hundred","five","remember","step","early","hold","west","ground","interest","reach","fast","verb","sing","listen","six","table","travel","less","morning","ten","simple","several","vowel","toward","war","lay","against","pattern","slow","center","love","person","money","serve","appear","road","map","science","rule","govern","pull","cold","notice","voice","unit","power","town","fine","certain","fly","fall","lead","cry","dark","machine","note","wait","plan","figure","star","box","noun","field","rest","correct","able","pound","done","beauty","drive","stood","contain","front","teach","week","final","gave","green","oh","quick","develop","ocean","warm","free","minute","strong","special","mind","behind","clear","tail","produce","fact","street","inch","multiply","nothing","course","stay","wheel","full","force","blue","object","decide","surface","deep","moon","island","foot","system","busy","test","record","boat","common","gold","possible","plane","stead","dry","wonder","laugh","thousand","ago","ran","check","game","shape","equate","hot","miss","brought","heat","snow","tire","bring","yes","distant","fill","east","paint","language","among"],
+  c_code: "int main() { char str[50]; printf(hello); return 0; } for(int i=0; i<10; i++) while(x>0) if(cond) else switch(v) case 1: break; struct Node { int d; Node* n; }; void func(int* p) malloc(sizeof(int)) free(p) #include <stdio.h> size_t strcpy()".split(" "),
+  python: "def function(args): return True class Object: __init__(self): pass import os sys from datetime import timedelta if __name__ == '__main__': list_comp = [x for x in range(10)] dict_val = {'key': 'value'} try: except Exception as e: print(f'{var}') yield lambda x: x+1".split(" ")
+};
+
+var QUOTES = {
+  short:[ "Practice does not make perfect. Practice reduces the distance between intention and result.", "A quiet room and a warm cup of coffee are the best editing tools you will ever own." ],
+  medium:[ "Somewhere between the first clumsy attempt and true fluency lies a long stretch of unglamorous repetition, the kind nobody photographs or celebrates, yet it is exactly what separates those who quit from those who simply keep going." ],
+  long:[ "Long before typing was measured in words per minute, clerks and typesetters were praised simply for legibility, for consistency, for hands that did not tire by the fortieth page. Speed came later, once machines could keep pace with thought, and once someone decided that faster was also better." ]
+};
+
+var THEMES = [
+  {id:"telegraph",name:"Telegraph",bg:"#14161b",panel:"#1c1f26",panel2:"#22262f",text:"#e4e6eb",sub:"#4b4f58",error:"#ff5c7a",accent:"#8b7fff",accent2:"#5eead4"},
+  {id:"nightowl",name:"Nightowl",bg:"#0f1720",panel:"#16212b",panel2:"#1c2b37",text:"#d6e2e8",sub:"#3e5361",error:"#ff6b6b",accent:"#63d2ff",accent2:"#f5c15c"},
+  {id:"dune",name:"Dune",bg:"#1b140e",panel:"#251c13",panel2:"#2d2318",text:"#f0e4d3",sub:"#6b5a45",error:"#e85c4a",accent:"#e8a33d",accent2:"#7fb77e"},
+  {id:"terminal",name:"Terminal",bg:"#0b0f0c",panel:"#121712",panel2:"#182018",text:"#c9f5d0",sub:"#3c4f3e",error:"#ff6b6b",accent:"#4affa0",accent2:"#4ad6ff"}
+];
+
+var FONTS = ["JetBrains Mono","Fira Code","IBM Plex Mono","Space Mono","Roboto Mono","Source Code Pro"];
+var TIME_OPTIONS = [15,30,60,120];
+var WORD_OPTIONS = [10,25,50,100];
+
+var DEFAULT_SETTINGS = {
+  difficulty:"normal", stopOnError:"off", blindMode:false, soundOnClick:true, soundVolume:0.4,
+  caretStyle:"line", smoothCaret:true, caretBlink:true, theme:"telegraph", font:"JetBrains Mono", fontSize:"md",
+  liveWpm:true, liveAcc:true, liveTimer:true
+};
+var DEFAULT_TESTCONFIG = { mode:"time", time:30, words:25, quoteLen:"medium", lang:"english", punctuation:false, numbers:false };
+
+var settings = loadJSON("tempo_settings", DEFAULT_SETTINGS);
+var cfg = loadJSON("tempo_testconfig", DEFAULT_TESTCONFIG);
+var pbs = loadJSON("tempo_pbs", {});
+var history = loadJSON("tempo_history", []);
+var T = null; 
+
+function loadJSON(key,fallback){
+  try{ var raw = localStorage.getItem(key); if(!raw) return JSON.parse(JSON.stringify(fallback)); return Object.assign({}, fallback, JSON.parse(raw)); }
+  catch(e){ return JSON.parse(JSON.stringify(fallback)); }
+}
+function loadArr(key){ try{ var raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : []; }catch(e){ return []; } }
+function saveSettings(){ try{ localStorage.setItem("tempo_settings", JSON.stringify(settings)); }catch(e){} }
+function saveConfig(){ try{ localStorage.setItem("tempo_testconfig", JSON.stringify(cfg)); }catch(e){} }
+function savePbs(){ try{ localStorage.setItem("tempo_pbs", JSON.stringify(pbs)); }catch(e){} }
+function saveHistory(){ try{ localStorage.setItem("tempo_history", JSON.stringify(history)); }catch(e){} }
+
+var modeGroup = $("modeGroup"), langGroup = $("langGroup"), toggleGroup = $("toggleGroup"), amountGroup = $("amountGroup");
+var customPanel = $("customPanel"), customText = $("customText"), customStartBtn = $("customStartBtn");
+var typingArea = $("typingArea"), wordsTrack = $("wordsTrack"), wordsViewport = $("wordsViewport");
+var caretEl = $("caret"), hiddenInput = $("hiddenInput");
+var liveStats = $("liveStats"), liveWpmEl = $("liveWpm"), liveAccEl = $("liveAcc"), liveTimeEl = $("liveTime"), liveTimeLbl = $("liveTimeLbl");
+var restartBtn = $("restartBtn"), finishZenBtn = $("finishZenBtn"), resultsScreen = $("resultsScreen"), modeConfigEl = $("modeConfig");
+var toastEl = $("toast"), toastText = $("toastText");
+
+/* ============================================================
+   THEME & UI BINDINGS
+   ============================================================ */
+function applyTheme(id){
+  var t = THEMES.find(function(x){return x.id===id;}) || THEMES[0];
+  var root = document.documentElement.style;
+  root.setProperty("--bg", t.bg); root.setProperty("--panel", t.panel); root.setProperty("--panel-2", t.panel2);
+  root.setProperty("--text", t.text); root.setProperty("--sub", t.sub); root.setProperty("--error", t.error);
+  root.setProperty("--accent", t.accent); root.setProperty("--accent2", t.accent2);
+}
+function applyFont(name){ wordsTrack.style.fontFamily = "'"+name+"', monospace"; }
+function applyFontSize(size){ typingArea.classList.remove("fs-sm","fs-md","fs-lg","fs-xl"); typingArea.classList.add("fs-"+size); }
+function applyCaretStyle(){
+  caretEl.classList.remove("style-line","style-block","style-underline","style-off");
+  caretEl.classList.add("style-"+settings.caretStyle);
+  caretEl.classList.toggle("blink", settings.caretBlink && settings.caretStyle!=="off");
+  caretEl.classList.toggle("instant", !settings.smoothCaret);
+}
+function applyLiveStatsVisibility(){
+  $("liveWpmWrap").classList.toggle("hidden", !settings.liveWpm);
+  $("liveAccWrap").classList.toggle("hidden", !settings.liveAcc);
+  $("liveTimeWrap").classList.toggle("hidden", !settings.liveTimer);
+}
+function applyAllSettings(){
+  applyTheme(settings.theme); applyFont(settings.font); applyFontSize(settings.fontSize);
+  applyCaretStyle(); applyLiveStatsVisibility(); renderThemeGrid(); renderFontSelect(); syncSettingsPanel();
+}
+
+/* ============================================================
+   WORD GENERATION
+   ============================================================ */
+function pickWord(prev, currentLang){
+  var pool = DICTIONARIES[currentLang] || DICTIONARIES.english;
+  var w, tries=0;
+  do{ w = pool[Math.floor(Math.random()*pool.length)]; tries++; } while(w===prev && tries<5);
+  return w;
+}
+function randomNumber(){
+  var len = 1+Math.floor(Math.random()*3), n = "";
+  for(var i=0;i<len;i++) n += Math.floor(Math.random()*10);
+  return n.replace(/^0+(?=\d)/,"") || "1";
+}
+var PUNCT_END=[".",".",".","!","?"], PUNCT_MID=[",",",",";",":"];
+function generateWords(count, opts){
+  var out=[], prev=null, sinceCap=0, capNext=true;
+  for(var i=0;i<count;i++){
+    var token;
+    if(opts.numbers && Math.random()<0.13) token = randomNumber();
+    else token = pickWord(prev, opts.lang);
+    prev = token;
+    if(opts.punctuation && opts.lang === "english"){
+      if(capNext && /^[a-z]/.test(token)){ token = token.charAt(0).toUpperCase()+token.slice(1); capNext=false; }
+      sinceCap++;
+      if(sinceCap > 5+Math.floor(Math.random()*6) && Math.random()<0.5){
+        token += PUNCT_END[Math.floor(Math.random()*PUNCT_END.length)]; capNext = true; sinceCap = 0;
+      } else if(Math.random()<0.12){ token += PUNCT_MID[Math.floor(Math.random()*PUNCT_MID.length)]; }
+    }
+    out.push(token);
+  }
+  return out;
+}
+
+/* ============================================================
+   TEST LIFECYCLE
+   ============================================================ */
+function newTestState(){
+  return {
+    mode: cfg.mode, words: [], wordIndex: 0, input: "", startTime: null, running: false, finished: false,
+    failed: false, failReason: "", hasErrorOccurred: false, finalCorrectChars: 0, finalIncorrectChars: 0,
+    finalExtraChars: 0, finalMissedChars: 0, keystrokesCorrect: 0, keystrokesIncorrect: 0, wpmHistory: [],
+    errorEvents: [], tickCount: 0, intervalId: null, rowOffset: 0, rowTop: 0, customSource: null
+  };
+}
+
+function initTest(){
+  if(T && T.intervalId){ clearInterval(T.intervalId); T.intervalId = null; }
+  T = newTestState();
+  typingArea.classList.remove("blurred"); resultsScreen.classList.add("hidden"); modeConfigEl.classList.remove("hidden");
+  finishZenBtn.classList.toggle("show", cfg.mode==="zen");
+  $("newBadgesPanel").style.display = "none";
+
+  if(cfg.mode==="time") T.words = generateWords(80, cfg);
+  else if(cfg.mode==="words") T.words = generateWords(cfg.words, cfg);
+  else if(cfg.mode==="quote") T.words = (QUOTES[cfg.quoteLen]||QUOTES.medium)[Math.floor(Math.random()*QUOTES[cfg.quoteLen].length)].split(" ");
+  else if(cfg.mode==="zen") T.words = generateWords(40, cfg);
+  else if(cfg.mode==="custom") T.words = ((T.customSource || customText.value || "").trim() || "Type here...").split(/\s+/).filter(Boolean);
+
+  renderWords(); updateAmountGroupActive(); updateLiveTimeDisplay(); resetCaretToStart();
+  liveWpmEl.textContent = "0"; liveAccEl.textContent = "100%"; focusInput();
+}
+
+function renderWords(){
+  wordsTrack.innerHTML = ""; wordsTrack.style.transform = "translateY(0px)"; T.rowOffset = 0; T.rowTop = 0;
+  for(var i=0;i<T.words.length;i++){
+    var w = document.createElement("span"); w.className = "word";
+    for(var j=0;j<T.words[i].length;j++){ var l = document.createElement("span"); l.className = "letter"; l.textContent = T.words[i][j]; w.appendChild(l); }
+    wordsTrack.appendChild(w);
+  }
+}
+function focusInput(){ hiddenInput.value=""; hiddenInput.focus({preventScroll:true}); }
+function resetCaretToStart(){ requestAnimationFrame(positionCaret); }
+function positionCaret(){
+  var wordEl = wordsTrack.children[T.wordIndex]; if(!wordEl) return;
+  var areaRect = typingArea.getBoundingClientRect(), target, rect;
+  if(T.input.length < wordEl.children.length){
+    target = wordEl.children[T.input.length]; rect = target.getBoundingClientRect();
+    caretEl.style.transform = "translate("+(rect.left-areaRect.left)+"px,"+(rect.top-areaRect.top)+"px)";
+    caretEl.style.width = (caretEl.classList.contains("style-block")? rect.width : (caretEl.classList.contains("style-underline")? rect.width : 2))+"px";
+    caretEl.style.height = (caretEl.classList.contains("style-underline")? "3px" : rect.height+"px");
+    if(caretEl.classList.contains("style-underline")) caretEl.style.transform = "translate("+(rect.left-areaRect.left)+"px,"+(rect.bottom-areaRect.top-3)+"px)";
+  } else if(wordEl.children.length){
+    target = wordEl.children[wordEl.children.length-1]; rect = target.getBoundingClientRect();
+    var left = rect.right-areaRect.left, top = rect.top-areaRect.top;
+    caretEl.style.width = (caretEl.classList.contains("style-line")? 2 : rect.width)+"px";
+    caretEl.style.height = (caretEl.classList.contains("style-underline")? "3px" : rect.height+"px");
+    caretEl.style.transform = caretEl.classList.contains("style-underline") ? "translate("+left+"px,"+(rect.bottom-areaRect.top-3)+"px)" : "translate("+left+"px,"+top+"px)";
+  }
+  
+  var relTop = Math.round(wordEl.getBoundingClientRect().top - wordsViewport.getBoundingClientRect().top + T.rowOffset);
+  if(T.rowTop===0 && T.rowOffset===0){ T.rowTop = relTop; return; }
+  if(relTop - T.rowTop > 4){
+    T.rowOffset -= (relTop - T.rowTop); T.rowTop = relTop;
+    wordsTrack.style.transform = "translateY("+T.rowOffset+"px)";
+  }
+}
+
+/* ============================================================
+   INPUT HANDLING
+   ============================================================ */
+typingArea.addEventListener("click", focusInput);
+typingArea.addEventListener("focus", function(){ typingArea.classList.remove("blurred"); });
+hiddenInput.addEventListener("focus", function(){ typingArea.classList.remove("blurred"); });
+hiddenInput.addEventListener("blur", function(){ if(T && T.running && !T.finished) typingArea.classList.add("blurred"); });
+
+// Allow Enter key to sign in when auth input is focused
+$("usernameInput").addEventListener("keydown", function(e){
+    if(e.key === "Enter") { window.handleLogin(); e.preventDefault(); e.stopPropagation(); }
+});
+
+document.addEventListener("keydown", function(e){
+  var overlays = ['paletteOverlay', 'settingsOverlay', 'authOverlay', 'leaderboardOverlay'];
+  var anyOverlayOpen = overlays.some(id => !$(id).classList.contains("hidden"));
+  
+  if(e.key==="Escape"){ 
+      e.preventDefault(); 
+      if(anyOverlayOpen) { overlays.forEach(id => { if(!$ (id).classList.contains("hidden")) closeModal(id); }); }
+      else openPalette(); 
+      return; 
+  }
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="k"){ e.preventDefault(); openPalette(); return; }
+  if(anyOverlayOpen) return;
+  if(e.key==="Tab"){ e.preventDefault(); restartTest(); return; }
+  if(!resultsScreen.classList.contains("hidden")) return;
+  if(document.activeElement!==hiddenInput) focusInput();
+  
+  if(!T || T.finished) return;
+  if(e.key==="Backspace"){ e.preventDefault(); onBackspace(e.ctrlKey||e.metaKey||e.altKey); return; }
+  if(e.key===" "){ e.preventDefault(); onSpace(); return; }
+  if(e.key.length===1 && !e.ctrlKey && !e.metaKey && !e.altKey){ e.preventDefault(); onChar(e.key); return; }
+});
+
+function onChar(ch){
+  var word = T.words[T.wordIndex], wEl = wordsTrack.children[T.wordIndex];
+  if(!wEl) return;
+  var pos = T.input.length, expected = word[pos], isCorrect = (expected!==undefined && expected===ch);
+
+  if(settings.stopOnError==="letter" && !isCorrect && pos < word.length){
+    wEl.children[pos].classList.remove("flash"); void wEl.children[pos].offsetWidth; wEl.children[pos].classList.add("flash");
+    T.keystrokesIncorrect++; playClick(true); return;
+  }
+  if(!T.running){ T.running = true; T.startTime = performance.now(); T.intervalId = setInterval(tick, 250); }
+
+  if(pos < word.length){
+    wEl.children[pos].classList.remove("correct","incorrect"); wEl.children[pos].classList.add(isCorrect? "correct":"incorrect");
+    if(!isCorrect){ wEl.children[pos].classList.remove("flash"); void wEl.children[pos].offsetWidth; wEl.children[pos].classList.add("flash"); }
+  } else if(pos - word.length < 15){
+    var extraEl = document.createElement("span"); extraEl.className = "letter extra incorrect"; extraEl.textContent = ch;
+    wEl.appendChild(extraEl); isCorrect = false;
+  } else return;
+
+  T.input += ch;
+  if(isCorrect) T.keystrokesCorrect++; 
+  else { T.keystrokesIncorrect++; T.hasErrorOccurred = true; T.errorEvents.push({t: (performance.now()-T.startTime)/1000}); if(settings.difficulty==="master") return failTest("Master mode failed"); }
+  
+  playClick(!isCorrect);
+
+  if(T.mode!=="zen" && T.wordIndex===T.words.length-1 && T.input===word){ finalizeWord(false); finishTest(false); return; }
+  requestAnimationFrame(positionCaret); updateLiveStats();
+}
+
+function onBackspace(wholeWord){
+  if(!T.running) return;
+  var wEl = wordsTrack.children[T.wordIndex];
+  if(T.input.length===0){
+    if(T.wordIndex===0) return;
+    var prevEl = wordsTrack.children[T.wordIndex-1];
+    if(!prevEl || !prevEl.querySelector(".incorrect,.missed,.extra")) return;
+    T.wordIndex--; T.input = "";
+    for(var i=0;i<prevEl.children.length;i++){
+      var c = prevEl.children[i]; if(c.classList.contains("extra")) continue;
+      if(c.classList.contains("missed")){ c.classList.remove("missed"); continue; }
+      T.input += T.words[T.wordIndex][i];
+    }
+    prevEl.querySelectorAll(".extra").forEach(function(x){ x.remove(); });
+  } else {
+    while(T.input.length>0){
+      var idx = T.input.length-1;
+      if(idx>=T.words[T.wordIndex].length){ var exs = wEl.querySelectorAll(".extra"); if(exs.length) exs[exs.length-1].remove(); } 
+      else wEl.children[idx].classList.remove("correct","incorrect");
+      T.input = T.input.slice(0,-1);
+      if(!wholeWord) break;
+    }
+  }
+  requestAnimationFrame(positionCaret); updateLiveStats();
+}
+
+function onSpace(){
+  if(!T.running || T.input.length===0) return;
+  if(settings.stopOnError==="word"){
+    var hasErr = false; for(var i=0;i<Math.max(T.words[T.wordIndex].length,T.input.length);i++){ if(T.input[i]!==T.words[T.wordIndex][i]) hasErr=true; }
+    if(hasErr){ wordsTrack.children[T.wordIndex].classList.remove("shake"); void wordsTrack.children[T.wordIndex].offsetWidth; wordsTrack.children[T.wordIndex].classList.add("shake"); return; }
+  }
+  finalizeWord(true);
+}
+
+function finalizeWord(fromSpace){
+  var wEl = wordsTrack.children[T.wordIndex], word = T.words[T.wordIndex];
+  var cor=0, incor=0, ex=0, mis=0, hadErr=false;
+  for(var i=0;i<word.length;i++){
+    if(i < T.input.length){ if(T.input[i]===word[i]) cor++; else { incor++; hadErr=true; } } 
+    else { mis++; hadErr=true; if(wEl.children[i]) wEl.children[i].classList.add("missed"); }
+  }
+  if(T.input.length > word.length){ ex += (T.input.length-word.length); hadErr = true; }
+
+  T.finalCorrectChars += cor; T.finalIncorrectChars += incor; T.finalExtraChars += ex; T.finalMissedChars += mis;
+  if(fromSpace) T.finalCorrectChars += 1; 
+
+  if(settings.difficulty==="expert" && hadErr) return failTest("Expert mode failed");
+
+  T.wordIndex++; T.input = "";
+  if((T.mode==="time"||T.mode==="zen") && T.words.length-T.wordIndex < 15){
+    var more = generateWords(30, cfg);
+    for(var j=0;j<more.length;j++){
+      T.words.push(more[j]);
+      var nW = document.createElement("span"); nW.className = "word";
+      for(var k=0;k<more[j].length;k++){ var l = document.createElement("span"); l.className = "letter"; l.textContent = more[j][k]; nW.appendChild(l); }
+      wordsTrack.appendChild(nW);
+    }
+  }
+  requestAnimationFrame(positionCaret); updateLiveStats();
+  if((T.mode==="words"||T.mode==="quote"||T.mode==="custom") && T.wordIndex>=T.words.length) finishTest(false);
+}
+
+/* ============================================================
+   TIMER, STATS, & AUDIO
+   ============================================================ */
+function tick(){
+  T.tickCount++; var elapsed = (performance.now()-T.startTime)/1000;
+  if(T.mode==="time"){ var r = Math.max(0, cfg.time-elapsed); liveTimeEl.textContent = Math.ceil(r); if(r<=0){ finishTest(false); return; } } 
+  else if(T.mode==="words"||T.mode==="custom") liveTimeEl.textContent = T.wordIndex+"/"+T.words.length;
+  else liveTimeEl.textContent = Math.floor(elapsed)+"s";
+  updateLiveStats();
+  if(T.tickCount % 4===0){
+    var min = Math.max(elapsed/60, 1/120);
+    T.wpmHistory.push({t:Math.round(elapsed), wpm:Math.max(Math.round((T.finalCorrectChars/5)/min),0), raw:Math.max(Math.round(((T.finalCorrectChars+T.finalIncorrectChars+T.finalExtraChars)/5)/min),0)});
+  }
+}
+
+function updateLiveStats(){
+  if(!T.startTime) return;
+  var min = Math.max((performance.now()-T.startTime)/60000, 1/120);
+  liveWpmEl.textContent = Math.max(Math.round((T.finalCorrectChars/5)/min),0);
+  liveAccEl.textContent = ((T.keystrokesCorrect+T.keystrokesIncorrect)>0 ? Math.round((T.keystrokesCorrect/(T.keystrokesCorrect+T.keystrokesIncorrect))*100) : 100) + "%";
+}
+function updateLiveTimeDisplay(){
+  if(cfg.mode==="time"){ liveTimeEl.textContent = cfg.time; liveTimeLbl.textContent="sec"; }
+  else if(cfg.mode==="words"||cfg.mode==="custom"){ liveTimeEl.textContent = "0/"+T.words.length; liveTimeLbl.textContent=""; }
+  else { liveTimeEl.textContent = "0s"; liveTimeLbl.textContent=""; }
+}
+
+var AudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playClick(isError){
+  if(!settings.soundOnClick) return;
+  try {
+      if (AudioCtx.state === 'suspended') AudioCtx.resume();
+      var osc = AudioCtx.createOscillator();
+      var gain = AudioCtx.createGain();
+      osc.connect(gain); gain.connect(AudioCtx.destination);
+      if (isError) {
+          osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, AudioCtx.currentTime);
+          gain.gain.setValueAtTime(settings.soundVolume, AudioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, AudioCtx.currentTime + 0.1);
+      } else {
+          osc.type = 'sine'; osc.frequency.setValueAtTime(800 + Math.random() * 200, AudioCtx.currentTime); 
+          gain.gain.setValueAtTime(settings.soundVolume * 0.5, AudioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, AudioCtx.currentTime + 0.05);
+      }
+      osc.start(); osc.stop(AudioCtx.currentTime + 0.1);
+  } catch(e) {}
+}
+
+function computeConsistency(){
+  var arr = T.wpmHistory.map(function(x){return x.wpm;}).filter(function(x){return x>0;});
+  if(arr.length<2) return 100;
+  var mean = arr.reduce(function(a,b){return a+b;},0)/arr.length;
+  if(mean===0) return 100;
+  var variance = arr.reduce(function(a,b){return a+Math.pow(b-mean,2);},0)/arr.length;
+  var sd = Math.sqrt(variance);
+  var c = Math.round(100-(sd/mean*100));
+  return Math.max(0,Math.min(100,c));
+}
+
+function failTest(r){ T.failed = true; T.failReason = r; finishTest(true); }
+function finishTest(){
+  if(T.finished) return;
+  T.finished = true; T.running = false; if(T.intervalId) clearInterval(T.intervalId); T.endTime = performance.now();
+  
+  modeConfigEl.classList.add("hidden"); resultsScreen.classList.remove("hidden");
+  var elapsed = Math.max((T.endTime-T.startTime)/1000, 0.3), min = elapsed/60;
+  var wpm = Math.max(Math.round((T.finalCorrectChars/5)/min),0);
+  var raw = Math.max(Math.round(((T.finalCorrectChars+T.finalIncorrectChars+T.finalExtraChars)/5)/min),0);
+  var acc = (T.keystrokesCorrect+T.keystrokesIncorrect)>0 ? Math.round((T.keystrokesCorrect/(T.keystrokesCorrect+T.keystrokesIncorrect))*100) : 100;
+  
+  $("resultWpmBig").textContent = wpm; $("resultAccBig").textContent = acc+"%";
+  $("statRaw").textContent = raw; $("statConsistency").textContent = computeConsistency() + "%";
+  $("statChars").textContent = T.finalCorrectChars+"/"+T.finalIncorrectChars+"/"+T.finalExtraChars+"/"+T.finalMissedChars;
+  $("statTime").textContent = elapsed<60? Math.round(elapsed)+"s" : Math.floor(elapsed/60)+"m "+Math.round(elapsed%60)+"s";
+  $("statMode").textContent = cfg.mode + " " + (cfg.mode==="time"?cfg.time:cfg.mode==="words"?cfg.words:"");
+  $("statDiff").textContent = settings.difficulty;
+  
+  var failBadge = $("failBadge"), pbBadge = $("pbBadge");
+  failBadge.classList.toggle("show", !!T.failed); if(T.failed) failBadge.textContent = "failed — "+T.failReason;
+  
+  var pbKey = cfg.mode+"_"+(cfg.mode==="time"?cfg.time:cfg.mode==="words"?cfg.words:cfg.mode), isNewPb = false;
+  if(!T.failed && (cfg.mode==="time"||cfg.mode==="words")){ var prevBest = pbs[pbKey]||0; if(wpm>prevBest){ pbs[pbKey]=wpm; savePbs(); isNewPb = prevBest>0; } }
+  pbBadge.classList.toggle("show", isNewPb);
+  
+  if(!T.failed){
+    history.unshift({mode:cfg.mode, amount:(cfg.mode==="time"?cfg.time+"s":cfg.mode==="words"?cfg.words+"w":cfg.mode), wpm:wpm, acc:acc, date:Date.now()});
+    history = history.slice(0,10); saveHistory();
+  }
+  
+  renderRecent();
+  checkAchievements(wpm);
+  
+  // Render Chart
+  var svg = $("wpmChart"), W=700,H=170,padL=30,padR=10,padT=10,padB=20;
+  var data = T.wpmHistory.length? T.wpmHistory : [{t:0,wpm:wpm,raw:raw}];
+  var maxWpm = Math.max.apply(null, data.map(function(d){return Math.max(d.wpm,d.raw);}).concat([10]));
+  var maxT = Math.max.apply(null, data.map(function(d){return d.t;}).concat([1]));
+  function x(t){ return padL + (t/maxT)*(W-padL-padR); } function y(v){ return padT + (1-(v/maxWpm))*(H-padT-padB); }
+  var gridLines="", axisText="";
+  for(var i=0;i<=4;i++){
+    var gy = padT + (i/4)*(H-padT-padB); gridLines += '<line class="chartGrid" x1="'+padL+'" y1="'+gy+'" x2="'+(W-padR)+'" y2="'+gy+'"/>';
+    axisText += '<text class="chartAxisText" x="2" y="'+(gy+3)+'">'+Math.round(maxWpm - (i/4)*maxWpm)+'</text>';
+  }
+  var wpmPts = data.map(function(d){return x(d.t)+","+y(d.wpm);}).join(" "), rawPts = data.map(function(d){return x(d.t)+","+y(d.raw);}).join(" ");
+  var errTicks = ""; T.errorEvents.slice(0,200).forEach(function(ev){ errTicks += '<circle class="chartErrTick" cx="'+x(ev.t)+'" cy="'+(H-padB+8)+'" r="2"/>'; });
+  svg.innerHTML = gridLines+axisText+'<polyline class="chartLine chartLineRaw" points="'+rawPts+'"/>'+'<polyline class="chartLine chartLineWpm" points="'+wpmPts+'"/>'+errTicks;
+}
+
+function renderRecent(){
+  var list = $("recentList"); list.innerHTML = "";
+  if(!history.length){ list.innerHTML = '<div class="recentRow"><span>no tests yet</span></div>'; return; }
+  history.forEach(function(h){
+    var row = document.createElement("div"); row.className = "recentRow";
+    var d = new Date(h.date); var timeStr = d.getHours().toString().padStart(2,"0")+":"+d.getMinutes().toString().padStart(2,"0");
+    row.innerHTML = '<span class="rMode">'+h.mode+' '+h.amount+'</span><span><b>'+h.wpm+'</b> wpm · '+h.acc+'% · '+timeStr+'</span>';
+    list.appendChild(row);
+  });
+}
+
+function checkAchievements(wpm) {
+    if (!currentUser) return; 
+    let userRecord = UsersDB[currentUser];
+    if(!userRecord) return;
+    
+    userRecord.tests += 1;
+    let newlyEarned = [];
+    if (wpm > userRecord.wpm) userRecord.wpm = wpm;
+    
+    const awardBadge = (name) => {
+        if (!userRecord.badges.includes(name)) { userRecord.badges.push(name); newlyEarned.push(name); }
+    };
+    
+    if (wpm >= 60) awardBadge("⌨️ Fast Fingers");
+    if (wpm >= 100) awardBadge("⚡ Speed Demon");
+    if (wpm >= 130) awardBadge("🔥 RTX Overclocked");
+    if (cfg.lang === "c_code" && wpm >= 50) awardBadge("🏆 C-Syntax Master");
+    if (cfg.lang === "python" && wpm >= 50) awardBadge("🐍 Python Charmer");
+    
+    saveDB();
+    
+    if (newlyEarned.length > 0) {
+        let panel = $("newBadgesPanel"); let container = $("newBadgesContainer");
+        container.innerHTML = newlyEarned.map(b => `<div class="badgeItem">${b}</div>`).join('');
+        panel.style.display = "flex";
+    }
+}
+
+/* ============================================================
+   UI & OVERLAYS BINDINGS
+   ============================================================ */
+$("restartBtn").addEventListener("click", function(){ $("restartBtn").classList.remove("spin"); void $("restartBtn").offsetWidth; $("restartBtn").classList.add("spin"); initTest(); });
+$("finishZenBtn").addEventListener("click", function(){ if(T && T.running) finishTest(); });
+$("nextTestBtn").addEventListener("click", initTest); 
+$("repeatTestBtn").addEventListener("click", initTest);
+
+$("modeGroup").addEventListener("click", function(e){
+  var btn = e.target.closest(".chip"); if(!btn) return;
+  cfg.mode = btn.getAttribute("data-mode"); saveConfig(); buildAmountGroup();
+  $("customPanel").classList.toggle("hidden", cfg.mode!=="custom"); $("toggleGroup").style.display = (cfg.mode==="quote"||cfg.mode==="custom")? "none":"flex";
+  updateModeGroupActive(); if(cfg.mode!=="custom") initTest(); else updateAmountGroupActive();
+});
+
+$("langGroup").addEventListener("click", function(e){
+  var btn = e.target.closest(".chip"); if(!btn) return;
+  cfg.lang = btn.getAttribute("data-lang"); saveConfig(); updateLangGroupActive(); initTest();
+});
+
+$("toggleGroup").addEventListener("click", function(e){
+  var btn = e.target.closest(".toggleBtn"); if(!btn) return;
+  var key = btn.getAttribute("data-toggle"); cfg[key] = !cfg[key]; saveConfig(); updateToggleActive(); initTest();
+});
+
+$("customStartBtn").addEventListener("click", function(){ T = T || newTestState(); T.customSource = $("customText").value; initTest(); });
+
+function updateModeGroupActive(){ Array.prototype.forEach.call($("modeGroup").children, function(b){ b.classList.toggle("active", b.getAttribute("data-mode")===cfg.mode); }); }
+function updateLangGroupActive(){ Array.prototype.forEach.call($("langGroup").children, function(b){ b.classList.toggle("active", b.getAttribute("data-lang")===cfg.lang); }); }
+function updateToggleActive(){ Array.prototype.forEach.call($("toggleGroup").children, function(b){ b.classList.toggle("active", !!cfg[b.getAttribute("data-toggle")]); }); }
+function buildAmountGroup(){
+  $("amountGroup").innerHTML = "";
+  var opts = cfg.mode==="time" ? TIME_OPTIONS : cfg.mode==="words" ? WORD_OPTIONS : cfg.mode==="quote" ? ["short","medium","long"] : [];
+  opts.forEach(function(v){
+    var b=document.createElement("button"); b.className="chip"; b.setAttribute("data-amount",v); b.textContent=v;
+    b.addEventListener("click", function(){ if(cfg.mode==="time") cfg.time=v; else if(cfg.mode==="words") cfg.words=v; else cfg.quoteLen=v; saveConfig(); updateAmountGroupActive(); initTest(); });
+    $("amountGroup").appendChild(b);
+  });
+}
+function updateAmountGroupActive(){
+  var active = cfg.mode==="time"?cfg.time:cfg.mode==="words"?cfg.words:cfg.mode==="quote"?cfg.quoteLen:null;
+  Array.prototype.forEach.call($("amountGroup").children, function(b){ b.classList.toggle("active", String(b.getAttribute("data-amount"))===String(active)); });
+}
+
+// Settings Overlay
+$("settingsBtn").addEventListener("click", function(){ $("settingsOverlay").classList.remove("hidden"); });
+$("closeSettingsBtn").addEventListener("click", function(){ closeModal('settingsOverlay'); });
+
+document.querySelectorAll(".segGroup[data-setting]").forEach(function(group){
+  group.addEventListener("click", function(e){
+    var btn = e.target.closest("button"); if(!btn) return;
+    var key = group.getAttribute("data-setting"); settings[key] = btn.getAttribute("data-val"); saveSettings(); syncSettingsPanel();
+    if(key==="caretStyle"||key==="smoothCaret"||key==="caretBlink"){ applyCaretStyle(); requestAnimationFrame(positionCaret); }
+    if(key==="fontSize"){ applyFontSize(settings.fontSize); requestAnimationFrame(positionCaret); }
+  });
+});
+document.querySelectorAll(".switch[data-setting]").forEach(function(sw){
+  sw.addEventListener("click", function(){
+    var key = sw.getAttribute("data-setting"); settings[key] = !settings[key]; saveSettings(); syncSettingsPanel();
+    if(key==="smoothCaret"||key==="caretBlink") applyCaretStyle();
+    if(key==="liveWpm"||key==="liveAcc"||key==="liveTimer") applyLiveStatsVisibility();
+  });
+});
+$("volumeSlider").addEventListener("input", function(){ settings.soundVolume = parseFloat(this.value); saveSettings(); });
+$("fontSelect").addEventListener("change", function(){ settings.font = this.value; saveSettings(); applyFont(settings.font); requestAnimationFrame(positionCaret); });
+$("resetSettingsBtn").addEventListener("click", function(){ settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); saveSettings(); applyAllSettings(); showToast("Settings reset"); });
+$("clearHistoryBtn").addEventListener("click", function(){ pbs = {}; history = []; savePbs(); saveHistory(); renderRecent(); showToast("History & personal bests cleared"); });
+
+function syncSettingsPanel(){
+  document.querySelectorAll(".segGroup[data-setting]").forEach(function(group){ var key = group.getAttribute("data-setting"); Array.prototype.forEach.call(group.children, function(b){ b.classList.toggle("active", b.getAttribute("data-val")===String(settings[key])); }); });
+  document.querySelectorAll(".switch[data-setting]").forEach(function(sw){ sw.classList.toggle("on", !!settings[sw.getAttribute("data-setting")]); });
+  $("volumeSlider").value = settings.soundVolume; $("fontSelect").value = settings.font;
+}
+function renderThemeGrid(){
+  $("themeGrid").innerHTML = "";
+  THEMES.forEach(function(t){
+    var el = document.createElement("button"); el.className = "themeSwatch"+(settings.theme===t.id? " active":"");
+    el.innerHTML = '<span class="swatchDots"><i class="swatchDot" style="background:'+t.bg+'"></i><i class="swatchDot" style="background:'+t.accent+'"></i><i class="swatchDot" style="background:'+t.accent2+'"></i></span><span>'+t.name+'</span>';
+    el.addEventListener("click", function(){ settings.theme = t.id; saveSettings(); applyTheme(t.id); renderThemeGrid(); }); $("themeGrid").appendChild(el);
+  });
+}
+function renderFontSelect(){ $("fontSelect").innerHTML = ""; FONTS.forEach(function(f){ var o = document.createElement("option"); o.value = f; o.textContent = f; $("fontSelect").appendChild(o); }); $("fontSelect").value = settings.font; }
+
+// Command Palette
+var paletteSelIdx = 0;
+function openPalette(){ $("paletteOverlay").classList.remove("hidden"); $("paletteInput").value = ""; renderPaletteList(""); setTimeout(function(){ $("paletteInput").focus(); },10); }
+$("paletteBtn").addEventListener("click", openPalette); 
+$("paletteInput").addEventListener("input", function(){ paletteSelIdx=0; renderPaletteList(this.value); });
+$("paletteInput").addEventListener("keydown", function(e){
+  var items = $("paletteList").children;
+  if(e.key==="ArrowDown"){ e.preventDefault(); paletteSelIdx=Math.min(paletteSelIdx+1,items.length-1); highlightPalette(); }
+  else if(e.key==="ArrowUp"){ e.preventDefault(); paletteSelIdx=Math.max(paletteSelIdx-1,0); highlightPalette(); }
+  else if(e.key==="Enter"){ e.preventDefault(); if(items[paletteSelIdx]) items[paletteSelIdx].click(); }
+});
+
+function renderPaletteList(query){
+  $("paletteList").innerHTML = "";
+  
+  var cmds = [
+    {label:"Switch to time mode", cat:"mode", run:function(){ cfg.mode="time"; saveConfig(); buildAmountGroup(); updateModeGroupActive(); initTest(); }},
+    {label:"Switch to words mode", cat:"mode", run:function(){ cfg.mode="words"; saveConfig(); buildAmountGroup(); updateModeGroupActive(); initTest(); }},
+    {label:"Switch to English mode", cat:"lang", run:function(){ cfg.lang="english"; saveConfig(); updateLangGroupActive(); initTest(); }},
+    {label:"Switch to C++ mode", cat:"lang", run:function(){ cfg.lang="c_code"; saveConfig(); updateLangGroupActive(); initTest(); }},
+    {label:"Switch to Python mode", cat:"lang", run:function(){ cfg.lang="python"; saveConfig(); updateLangGroupActive(); initTest(); }},
+    {label:"Open Settings", cat:"nav", run:function(){ $("settingsOverlay").classList.remove("hidden"); }},
+    {label:"Open Leaderboard", cat:"nav", run:window.openLeaderboard},
+    {label:"Sign In / Profile", cat:"nav", run:window.openAuthModal},
+    {label:"Restart Test", cat:"nav", run:function(){ initTest(); }}
+  ];
+  
+  THEMES.forEach(function(t){ cmds.push({label:"Theme: "+t.name, cat:"theme", run:function(){ settings.theme=t.id; saveSettings(); applyTheme(t.id); renderThemeGrid(); }}); });
+  
+  var filtered = cmds.filter(function(c){ return c.label.toLowerCase().indexOf(query.toLowerCase())!==-1; });
+  filtered.forEach(function(c,i){
+    var li = document.createElement("li"); li.className = "paletteItem"+(i===0?" sel":""); li.innerHTML = '<span>'+c.label+'</span><span class="pCat">'+c.cat+'</span>';
+    li.addEventListener("click", function(){ c.run(); closeModal('paletteOverlay'); showToast(c.label); }); $("paletteList").appendChild(li);
+  }); paletteSelIdx = 0;
+}
+function highlightPalette(){ Array.prototype.forEach.call($("paletteList").children, function(it,i){ it.classList.toggle("sel", i===paletteSelIdx); }); }
+
+// Toasts
+var toastTimer=null;
+function showToast(msg){
+  $("toastText").textContent = msg; $("toast").classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(function(){ $("toast").classList.remove("show"); }, 2200);
+}
+
+// Click outside overlay to close
+document.querySelectorAll(".overlay").forEach(function(ov){
+    ov.addEventListener("click", function(e){ if(e.target===ov) closeModal(ov.id); });
+});
+
+/* ============================================================
+   INIT & EVENT WIRING
+   ============================================================ */
+// Wire Auth and Leaderboard Buttons
+$("authTriggerBtn").addEventListener("click", window.openAuthModal);
+$("leaderboardBtn").addEventListener("click", window.openLeaderboard);
+
+window.addEventListener("resize", function(){ if(T) requestAnimationFrame(positionCaret); });
+applyAllSettings(); updateModeGroupActive(); updateLangGroupActive(); updateToggleActive(); buildAmountGroup(); updateAuthUI();
+$("customPanel").classList.toggle("hidden", cfg.mode!=="custom"); $("toggleGroup").style.display = (cfg.mode==="quote"||cfg.mode==="custom")? "none":"flex"; initTest();
+
+})();
+</script>
+</body>
+</html>
